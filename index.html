@@ -10,8 +10,8 @@
       font-family: Arial, sans-serif;
       background: #111;
       color: #fff;
-      display: grid;
-      grid-template-rows: auto 1fr;
+      display: flex;
+      flex-direction: column;
       height: 100vh;
     }
     header {
@@ -22,54 +22,120 @@
     }
     .container {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1rem;
       padding: 1rem;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
+      flex: 1;
+      overflow: auto;
     }
     .module {
       background: #1e1e1e;
       border-radius: 10px;
-      overflow: hidden;
-      padding: 0;
+      padding: 1rem;
     }
     .module h2 {
       text-align: center;
       background: #333;
-      margin: 0;
+      margin: -1rem -1rem 1rem -1rem;
       padding: 0.5rem;
       font-size: 1rem;
     }
-    .small {
-      font-size: 0.8rem;
-      text-align: center;
-      color: #bbb;
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 0.3rem 0;
+      border-bottom: 1px solid #333;
+    }
+    a {
+      color: #00f;
     }
   </style>
 </head>
 <body>
   <header>🚌 Georgetown Transit Dashboard</header>
   <div class="container">
-    <div class="module">
-      <h2>Bus Arrivals (Stop 1001645)</h2>
-      <iframe src="https://buseta.wmata.com/m/index?q=1001645"></iframe>
+    <div class="module" id="weather">
+      <h2>Current Weather</h2>
+      <div id="weatherContent">Loading weather...</div>
     </div>
-    <div class="module">
-      <h2>Current Weather (Georgetown)</h2>
-      <iframe src="https://forecast7.com/en/38d91n77d07/washington/?unit=us" frameborder="0" height="250"></iframe>
-    </div>
-    <div class="module">
-      <h2>Uber Wait Time (Google)</h2>
-      <iframe src="https://www.google.com/maps/dir/?api=1&origin=1735+34th+St+NW,+Washington,+DC&destination=Union+Station,+Washington,+DC&travelmode=driving" frameborder="0"></iframe>
-    </div>
-    <div class="module">
+
+    <div class="module" id="clock">
       <h2>Current Time</h2>
-      <iframe src="https://free.timeanddate.com/clock/i95lsy5a/n263/tlus/fn6/fs24/fcfff/tc222/pct/ftb/bas2/bac111" allowtransparency="true" frameborder="0" width="100%" height="90"></iframe>
+      <div id="clockContent" style="font-size: 2rem; text-align: center;">--:--:--</div>
+    </div>
+
+    <div class="module" id="bus">
+      <h2>Bus Arrivals at Wisconsin & 34th</h2>
+      <ul id="arrival-list"><li>Loading bus data...</li></ul>
+    </div>
+
+    <div class="module" id="uber">
+      <h2>Uber Options</h2>
+      <p style="text-align: center;">
+        <a href="https://www.google.com/maps/dir/?api=1&origin=1735+34th+St+NW,+Washington,+DC&destination=Union+Station,+Washington,+DC&travelmode=driving" target="_blank">Check Uber via Google Maps</a>
+      </p>
     </div>
   </div>
+
+  <script>
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString();
+      document.getElementById("clockContent").textContent = timeString;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Weather
+    async function loadWeather() {
+      const response = await fetch("https://api.openweathermap.org/data/2.5/weather?lat=38.9136&lon=-77.0706&units=imperial&appid=5202a7831f5def7d4c4848aa2d9a2874");
+      const data = await response.json();
+      const content = `
+        <div style="text-align: center">
+          <strong>${data.name}</strong><br />
+          ${data.weather[0].description}<br />
+          <strong>${Math.round(data.main.temp)}°F</strong><br />
+          Feels like: ${Math.round(data.main.feels_like)}°F
+        </div>
+      `;
+      document.getElementById("weatherContent").innerHTML = content;
+    }
+    loadWeather();
+
+    // WMATA Bus Arrivals
+    async function fetchBusArrivals() {
+      const stopId = '1001645';
+      const apiKey = '75a4ad0acdc74a3ca9747020527de647';
+      try {
+        const response = await fetch(`https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=${stopId}`, {
+          headers: {
+            'api_key': apiKey
+          }
+        });
+        const data = await response.json();
+        const arrivals = data.Predictions;
+        const arrivalList = document.getElementById('arrival-list');
+        arrivalList.innerHTML = '';
+
+        if (arrivals.length === 0) {
+          arrivalList.innerHTML = '<li>No upcoming buses.</li>';
+        } else {
+          arrivals.forEach(arrival => {
+            const listItem = document.createElement('li');
+            listItem.textContent = `Route ${arrival.RouteID} to ${arrival.DirectionText} - in ${arrival.Minutes} min`;
+            arrivalList.appendChild(listItem);
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching bus arrivals:', error);
+        document.getElementById('arrival-list').innerHTML = '<li>Error loading data.</li>';
+      }
+    }
+    fetchBusArrivals();
+    setInterval(fetchBusArrivals, 60000);
+  </script>
 </body>
 </html>
