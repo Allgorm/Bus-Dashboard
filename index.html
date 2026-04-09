@@ -7,6 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Bus Dashboard" />
   <title>Georgetown Transit Dashboard</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -23,8 +24,8 @@
 
     header {
       text-align: center;
-      padding: 0.8rem 1rem;
-      font-size: 1.4rem;
+      padding: 0.6rem 1rem;
+      font-size: 1.3rem;
       font-weight: 600;
       background: #fff;
       border-bottom: 1px solid #ddd;
@@ -50,8 +51,8 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       grid-template-rows: auto 1fr;
-      gap: 0.8rem;
-      padding: 0.8rem;
+      gap: 0.6rem;
+      padding: 0.6rem;
       flex: 1;
       overflow: hidden;
     }
@@ -69,8 +70,8 @@
     .module h2 {
       text-align: center;
       background: #f8f9fa;
-      padding: 0.5rem;
-      font-size: 0.85rem;
+      padding: 0.4rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: #5a6a7a;
       letter-spacing: 0.5px;
@@ -79,28 +80,37 @@
     }
 
     .module-body {
-      padding: 0.8rem;
+      padding: 0.6rem;
       flex: 1;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
 
-    .module.bus-module {
+    .module.full-width {
       grid-column: 1 / -1;
+    }
+
+    /* Bottom row: bus list + map side by side */
+    .bottom-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+      min-height: 0;
     }
 
     /* Clock */
     .clock-time {
-      font-size: 3rem;
+      font-size: 2.8rem;
       font-weight: 300;
       text-align: center;
       letter-spacing: 2px;
-      padding: 0.3rem 0;
+      padding: 0.2rem 0;
       color: #1a1a1a;
     }
 
     .clock-date {
-      font-size: 1rem;
+      font-size: 0.95rem;
       text-align: center;
       color: #777;
     }
@@ -109,30 +119,30 @@
     .weather-main { text-align: center; }
 
     .weather-temp {
-      font-size: 2.8rem;
+      font-size: 2.5rem;
       font-weight: 300;
       color: #1a1a1a;
     }
 
     .weather-desc {
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: #666;
       text-transform: capitalize;
-      margin: 0.2rem 0;
+      margin: 0.1rem 0;
     }
 
     .weather-details {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: #888;
-      margin-top: 0.3rem;
+      margin-top: 0.2rem;
     }
 
     .weather-uv {
       display: inline-block;
-      margin-top: 0.4rem;
+      margin-top: 0.3rem;
       padding: 0.2rem 0.6rem;
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
     }
 
@@ -148,9 +158,9 @@
     .bus-item {
       display: flex;
       align-items: center;
-      padding: 0.6rem 0.4rem;
+      padding: 0.5rem 0.3rem;
       border-bottom: 1px solid #f0f0f0;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .bus-item:last-child { border-bottom: none; }
@@ -159,23 +169,24 @@
       background: #3468a8;
       color: #fff;
       font-weight: 700;
-      padding: 0.3rem 0.6rem;
+      padding: 0.25rem 0.5rem;
       border-radius: 6px;
-      min-width: 50px;
+      min-width: 45px;
       text-align: center;
-      margin-right: 0.8rem;
-      font-size: 1rem;
+      margin-right: 0.6rem;
+      font-size: 0.95rem;
     }
 
     .bus-dest {
       flex: 1;
       color: #444;
+      font-size: 0.9rem;
     }
 
     .bus-time {
       font-weight: 700;
-      font-size: 1.2rem;
-      min-width: 70px;
+      font-size: 1.1rem;
+      min-width: 60px;
       text-align: right;
     }
 
@@ -186,8 +197,8 @@
     /* Stop selector */
     .stop-selector {
       display: flex;
-      gap: 0.5rem;
-      padding: 0.6rem;
+      gap: 0.4rem;
+      padding: 0.5rem;
       justify-content: center;
       flex-wrap: wrap;
       background: #f8f9fa;
@@ -198,8 +209,8 @@
       color: #888;
       border: 2px solid #ddd;
       border-radius: 8px;
-      padding: 0.5rem 1rem;
-      font-size: 0.95rem;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
       cursor: pointer;
       font-family: inherit;
       transition: all 0.2s;
@@ -215,7 +226,7 @@
       text-align: center;
       color: #999;
       padding: 1.5rem;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .error-msg {
@@ -229,24 +240,40 @@
       text-decoration: underline;
     }
 
+    /* Map */
+    #map {
+      width: 100%;
+      height: 100%;
+      min-height: 200px;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .map-module .module-body {
+      padding: 0;
+    }
+
     /* Portrait mode on iPad */
     @media (orientation: portrait) {
       .container {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
+        grid-template-rows: auto auto auto 1fr;
       }
-      .module.bus-module { grid-column: 1; }
-      .clock-time { font-size: 2.5rem; }
-      .weather-temp { font-size: 2.2rem; }
+      .bottom-row {
+        grid-column: 1;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 250px;
+      }
+      .clock-time { font-size: 2.2rem; }
+      .weather-temp { font-size: 2rem; }
     }
 
     /* Small screens */
     @media (max-height: 600px) {
-      header { padding: 0.4rem; font-size: 1.1rem; }
-      .container { gap: 0.5rem; padding: 0.5rem; }
-      .module h2 { padding: 0.3rem; font-size: 0.8rem; }
-      .clock-time { font-size: 2rem; }
-      .weather-temp { font-size: 2rem; }
+      header { padding: 0.3rem; font-size: 1rem; }
+      .container { gap: 0.4rem; padding: 0.4rem; }
+      .module h2 { padding: 0.25rem; font-size: 0.75rem; }
+      .clock-time { font-size: 1.8rem; }
+      .weather-temp { font-size: 1.8rem; }
     }
   </style>
 </head>
@@ -273,32 +300,43 @@
       </div>
     </div>
 
-    <div class="module bus-module">
-      <h2>Next Buses — <span id="stopName">Loading...</span></h2>
-      <div class="stop-selector">
-        <button class="stop-btn active" data-stop="1001645">Wisconsin & 34th</button>
-        <button class="stop-btn" data-stop="1002875">16th & Belmont</button>
+    <div class="bottom-row">
+      <div class="module">
+        <h2>Next Buses — <span id="stopName">Loading...</span></h2>
+        <div class="stop-selector">
+          <button class="stop-btn active" data-stop="1001645">Wisconsin & 34th</button>
+          <button class="stop-btn" data-stop="1002875">16th & Belmont</button>
+        </div>
+        <div class="module-body">
+          <ul class="bus-list" id="busList">
+            <li class="no-buses">Loading bus schedule...</li>
+          </ul>
+        </div>
       </div>
-      <div class="module-body">
-        <ul class="bus-list" id="busList">
-          <li class="no-buses">Loading bus schedule...</li>
-        </ul>
+
+      <div class="module map-module">
+        <h2>Live Bus Map</h2>
+        <div class="module-body">
+          <div id="map"></div>
+        </div>
       </div>
     </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // ── Configuration ──
     const WMATA_API_KEY = '75a4ad0acdc74a3ca9747020527de647';
     const STOPS = {
-      '1001645': 'Wisconsin & 34th',
-      '1002875': '16th & Belmont'
+      '1001645': { name: 'Wisconsin & 34th', lat: 38.9136, lon: -77.0706 },
+      '1002875': { name: '16th & Belmont', lat: 38.920476, lon: -77.036619 }
     };
     let currentStopId = localStorage.getItem('selectedStop') || '1001645';
-    const LAT = 38.9136;
-    const LON = -77.0706;
     const BUS_REFRESH_MS = 30000;
     const WEATHER_REFRESH_MS = 600000;
+
+    // Track active routes for map
+    let activeRoutes = [];
 
     // ── Clock ──
     function updateClock() {
@@ -318,10 +356,11 @@
       el.className = 'status ' + (type || '');
     }
 
-    // ── Weather (Open-Meteo — free, no key needed) ──
+    // ── Weather (Open-Meteo) ──
     async function loadWeather() {
+      const stop = STOPS[currentStopId];
       try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,uv_index&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${stop.lat}&longitude=${stop.lon}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,uv_index&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -330,8 +369,6 @@
         const desc = weatherCodeToText(c.weather_code);
         const icon = weatherCodeToIcon(c.weather_code);
         const uv = c.uv_index;
-        const uvLabel = uvIndexLabel(uv);
-        const uvClass = uvIndexClass(uv);
 
         document.getElementById('weatherContent').innerHTML = `
           <div class="weather-temp">${icon} ${Math.round(c.temperature_2m)}\u00B0F</div>
@@ -341,7 +378,7 @@
             Wind ${Math.round(c.wind_speed_10m)} mph &middot;
             Humidity ${c.relative_humidity_2m}%
           </div>
-          <div class="weather-uv ${uvClass}">UV ${uv.toFixed(1)} &mdash; ${uvLabel}</div>
+          <div class="weather-uv ${uvIndexClass(uv)}">UV ${uv.toFixed(1)} &mdash; ${uvIndexLabel(uv)}</div>
         `;
       } catch (err) {
         console.error('Weather error:', err);
@@ -394,6 +431,82 @@
       return '\u26C8\uFE0F';
     }
 
+    // ── Leaflet Map ──
+    const stop = STOPS[currentStopId];
+    const map = L.map('map', { zoomControl: false }).setView([stop.lat, stop.lon], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Stop marker (red)
+    const stopIcon = L.divIcon({
+      className: '',
+      html: '<div style="background:#c62828;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.3);">S</div>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    let stopMarker = L.marker([stop.lat, stop.lon], { icon: stopIcon })
+      .addTo(map)
+      .bindPopup(stop.name);
+
+    // Bus markers layer
+    let busMarkersLayer = L.layerGroup().addTo(map);
+
+    function createBusIcon(routeId) {
+      return L.divIcon({
+        className: '',
+        html: `<div style="background:#3468a8;color:#fff;border-radius:6px;padding:2px 6px;font-weight:700;font-size:12px;white-space:nowrap;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.3);">${routeId}</div>`,
+        iconSize: null,
+        iconAnchor: [20, 12]
+      });
+    }
+
+    async function fetchBusPositions() {
+      if (activeRoutes.length === 0) {
+        busMarkersLayer.clearLayers();
+        return;
+      }
+
+      try {
+        // Fetch positions for all active routes
+        const uniqueRoutes = [...new Set(activeRoutes)];
+        const fetches = uniqueRoutes.map(route =>
+          fetch(`https://api.wmata.com/Bus.svc/json/jBusPositions?RouteID=${route}`, {
+            headers: { 'api_key': WMATA_API_KEY }
+          }).then(r => r.json()).catch(() => ({ BusPositions: [] }))
+        );
+
+        const results = await Promise.all(fetches);
+        busMarkersLayer.clearLayers();
+
+        const stopPos = STOPS[currentStopId];
+
+        results.forEach(data => {
+          (data.BusPositions || []).forEach(bus => {
+            const marker = L.marker([bus.Lat, bus.Lon], {
+              icon: createBusIcon(bus.RouteID)
+            });
+            marker.bindPopup(`Route ${bus.RouteID}<br>${bus.DirectionText}<br>Deviation: ${bus.Deviation} min`);
+            busMarkersLayer.addLayer(marker);
+          });
+        });
+
+        // Fit map to show stop + all buses, but don't zoom too far out
+        const allPoints = [[stopPos.lat, stopPos.lon]];
+        busMarkersLayer.eachLayer(m => allPoints.push([m.getLatLng().lat, m.getLatLng().lng]));
+        if (allPoints.length > 1) {
+          const bounds = L.latLngBounds(allPoints);
+          map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+        }
+
+      } catch (err) {
+        console.error('Bus positions error:', err);
+      }
+    }
+
     // ── Bus Arrivals (WMATA API) ──
     async function fetchBusArrivals() {
       const listEl = document.getElementById('busList');
@@ -408,7 +521,7 @@
             <li class="error-msg">
               WMATA API key expired or invalid.<br>
               Get a free key at <a href="https://developer.wmata.com" target="_blank">developer.wmata.com</a>
-              and update the WMATA_API_KEY in config.js.
+              and update WMATA_API_KEY in index.html.
             </li>`;
           setStatus('API key error', 'error');
           return;
@@ -418,6 +531,9 @@
 
         const data = await res.json();
         const arrivals = data.Predictions || [];
+
+        // Update active routes for map
+        activeRoutes = arrivals.map(a => a.RouteID);
 
         if (arrivals.length === 0) {
           listEl.innerHTML = '<li class="no-buses">No buses scheduled right now</li>';
@@ -441,6 +557,9 @@
         const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         setStatus(`Updated ${now}`, 'ok');
 
+        // Update bus positions on map
+        fetchBusPositions();
+
       } catch (err) {
         console.error('Bus error:', err);
         listEl.innerHTML = '<li class="error-msg">Error loading bus data. Retrying...</li>';
@@ -450,10 +569,15 @@
 
     // ── Stop selector ──
     function updateStopUI() {
-      document.getElementById('stopName').textContent = STOPS[currentStopId];
+      const s = STOPS[currentStopId];
+      document.getElementById('stopName').textContent = s.name;
       document.querySelectorAll('.stop-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.stop === currentStopId);
       });
+      // Re-center map
+      map.setView([s.lat, s.lon], 15);
+      stopMarker.setLatLng([s.lat, s.lon]).setPopupContent(s.name);
+      busMarkersLayer.clearLayers();
     }
 
     document.querySelectorAll('.stop-btn').forEach(btn => {
@@ -481,7 +605,7 @@
         if ('wakeLock' in navigator) {
           await navigator.wakeLock.request('screen');
         }
-      } catch (e) { /* not supported or denied */ }
+      } catch (e) {}
     }
     requestWakeLock();
     document.addEventListener('visibilitychange', () => {
@@ -491,6 +615,9 @@
         loadWeather();
       }
     });
+
+    // Fix Leaflet rendering in hidden/resized containers
+    setTimeout(() => map.invalidateSize(), 500);
   </script>
 </body>
 </html>
