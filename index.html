@@ -90,13 +90,14 @@
       grid-column: 1 / -1;
     }
 
-    /* Bottom row: bus list + map side by side */
+    /* Bottom row: bus list stacked on top of map */
     .bottom-row {
       grid-column: 1 / -1;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
+      flex-direction: column;
       gap: 0.6rem;
       min-height: 0;
+      overflow: hidden;
     }
 
     /* Clock */
@@ -256,12 +257,7 @@
     @media (orientation: portrait) {
       .container {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto 1fr;
-      }
-      .bottom-row {
-        grid-column: 1;
-        grid-template-columns: 1fr;
-        grid-template-rows: 1fr 250px;
+        grid-template-rows: auto auto 1fr;
       }
       .clock-time { font-size: 2.2rem; }
       .weather-temp { font-size: 2rem; }
@@ -433,7 +429,7 @@
 
     // ── Leaflet Map ──
     const stop = STOPS[currentStopId];
-    const map = L.map('map', { zoomControl: false }).setView([stop.lat, stop.lon], 15);
+    const map = L.map('map', { zoomControl: false }).setView([stop.lat, stop.lon], 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap',
@@ -494,13 +490,6 @@
           });
         });
 
-        // Fit map to show stop + all buses, but don't zoom too far out
-        const allPoints = [[stopPos.lat, stopPos.lon]];
-        busMarkersLayer.eachLayer(m => allPoints.push([m.getLatLng().lat, m.getLatLng().lng]));
-        if (allPoints.length > 1) {
-          const bounds = L.latLngBounds(allPoints);
-          map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
-        }
 
       } catch (err) {
         console.error('Bus positions error:', err);
@@ -575,7 +564,7 @@
         btn.classList.toggle('active', btn.dataset.stop === currentStopId);
       });
       // Re-center map
-      map.setView([s.lat, s.lon], 15);
+      map.setView([s.lat, s.lon], 16);
       stopMarker.setLatLng([s.lat, s.lon]).setPopupContent(s.name);
       busMarkersLayer.clearLayers();
     }
