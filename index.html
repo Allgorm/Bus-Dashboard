@@ -18,7 +18,7 @@
       height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      overflow: auto;
       -webkit-text-size-adjust: 100%;
     }
 
@@ -258,23 +258,34 @@
       padding: 0;
     }
 
-    /* Portrait mode on iPad */
+    /* Portrait mode — keep clock & weather side by side */
     @media (orientation: portrait) {
       .container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr;
+        overflow-y: auto;
+      }
+      .bottom-row {
+        grid-column: 1 / -1;
       }
       .clock-time { font-size: 2.2rem; }
       .weather-temp { font-size: 2rem; }
     }
 
-    /* Small screens */
-    @media (max-height: 600px) {
-      header { padding: 0.3rem; font-size: 1rem; }
-      .container { gap: 0.4rem; padding: 0.4rem; }
-      .module h2 { padding: 0.25rem; font-size: 0.75rem; }
-      .clock-time { font-size: 1.8rem; }
+    /* Small screens (phones) */
+    @media (max-width: 600px) {
+      header { padding: 0.4rem; font-size: 1.1rem; }
+      .container {
+        gap: 0.4rem;
+        padding: 0.4rem;
+        overflow-y: auto;
+      }
+      .clock-time { font-size: 2rem; }
       .weather-temp { font-size: 1.8rem; }
+      .bottom-row .map-module {
+        min-height: 200px;
+      }
+      #map { min-height: 200px; }
     }
   </style>
 </head>
