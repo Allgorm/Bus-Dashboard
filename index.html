@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Bus Dashboard" />
-  <title>Georgetown Transit Dashboard</title>
+  <title>Morning Commute Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -281,7 +281,7 @@
 <body>
   <header>
     <div style="min-width:120px"></div>
-    <div class="title">Georgetown Transit</div>
+    <div class="title">Morning Commute</div>
     <div class="status" id="status">Starting...</div>
   </header>
 
@@ -495,11 +495,11 @@
           });
         });
 
-        // Fit map to show stop + only nearby buses (within ~2 miles)
+        // Fit map to show stop + only nearby buses (within ~1 mile)
         const stopLatLng = L.latLng(stopPos.lat, stopPos.lon);
         const nearbyPoints = [[stopPos.lat, stopPos.lon]];
         busMarkersLayer.eachLayer(m => {
-          if (stopLatLng.distanceTo(m.getLatLng()) < 3200) {
+          if (stopLatLng.distanceTo(m.getLatLng()) < 1609) {
             nearbyPoints.push([m.getLatLng().lat, m.getLatLng().lng]);
           }
         });
