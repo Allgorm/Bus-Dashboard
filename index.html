@@ -495,12 +495,19 @@
           });
         });
 
-        // Fit map to show stop + nearest buses
-        const allPoints = [[stopPos.lat, stopPos.lon]];
-        busMarkersLayer.eachLayer(m => allPoints.push([m.getLatLng().lat, m.getLatLng().lng]));
-        if (allPoints.length > 1) {
-          const bounds = L.latLngBounds(allPoints);
-          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+        // Fit map to show stop + only nearby buses (within ~2 miles)
+        const stopLatLng = L.latLng(stopPos.lat, stopPos.lon);
+        const nearbyPoints = [[stopPos.lat, stopPos.lon]];
+        busMarkersLayer.eachLayer(m => {
+          if (stopLatLng.distanceTo(m.getLatLng()) < 3200) {
+            nearbyPoints.push([m.getLatLng().lat, m.getLatLng().lng]);
+          }
+        });
+        if (nearbyPoints.length > 1) {
+          const bounds = L.latLngBounds(nearbyPoints);
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 17, minZoom: 14 });
+        } else {
+          map.setView([stopPos.lat, stopPos.lon], 16);
         }
 
       } catch (err) {
