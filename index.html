@@ -2,140 +2,495 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Bus Dashboard" />
   <title>Georgetown Transit Dashboard</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #111;
-      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      background: #f2f4f7;
+      color: #1a1a1a;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      overflow: hidden;
+      -webkit-text-size-adjust: 100%;
     }
+
     header {
       text-align: center;
-      padding: 1rem;
-      font-size: 1.5rem;
-      background: #222;
+      padding: 0.8rem 1rem;
+      font-size: 1.4rem;
+      font-weight: 600;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #2c3e50;
     }
+
+    header .title { flex: 1; text-align: center; }
+
+    header .status {
+      font-size: 0.7rem;
+      color: #999;
+      min-width: 120px;
+      text-align: right;
+    }
+
+    header .status.ok { color: #2e7d32; }
+    header .status.error { color: #c62828; }
+
     .container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto 1fr;
+      gap: 0.8rem;
+      padding: 0.8rem;
       flex: 1;
-      overflow: auto;
+      overflow: hidden;
     }
+
     .module {
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 1rem;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e0e0e0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
+
     .module h2 {
       text-align: center;
-      background: #333;
-      margin: -1rem -1rem 1rem -1rem;
+      background: #f8f9fa;
       padding: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #5a6a7a;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #eee;
+    }
+
+    .module-body {
+      padding: 0.8rem;
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .module.bus-module {
+      grid-column: 1 / -1;
+    }
+
+    /* Clock */
+    .clock-time {
+      font-size: 3rem;
+      font-weight: 300;
+      text-align: center;
+      letter-spacing: 2px;
+      padding: 0.3rem 0;
+      color: #1a1a1a;
+    }
+
+    .clock-date {
+      font-size: 1rem;
+      text-align: center;
+      color: #777;
+    }
+
+    /* Weather */
+    .weather-main { text-align: center; }
+
+    .weather-temp {
+      font-size: 2.8rem;
+      font-weight: 300;
+      color: #1a1a1a;
+    }
+
+    .weather-desc {
+      font-size: 1rem;
+      color: #666;
+      text-transform: capitalize;
+      margin: 0.2rem 0;
+    }
+
+    .weather-details {
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 0.3rem;
+    }
+
+    .weather-uv {
+      display: inline-block;
+      margin-top: 0.4rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .uv-low { background: #e8f5e9; color: #2e7d32; }
+    .uv-moderate { background: #fff8e1; color: #f9a825; }
+    .uv-high { background: #fff3e0; color: #e65100; }
+    .uv-very-high { background: #fbe9e7; color: #bf360c; }
+    .uv-extreme { background: #f3e5f5; color: #6a1b9a; }
+
+    /* Bus arrivals */
+    .bus-list { list-style: none; }
+
+    .bus-item {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0.4rem;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 1.1rem;
+    }
+
+    .bus-item:last-child { border-bottom: none; }
+
+    .bus-route {
+      background: #3468a8;
+      color: #fff;
+      font-weight: 700;
+      padding: 0.3rem 0.6rem;
+      border-radius: 6px;
+      min-width: 50px;
+      text-align: center;
+      margin-right: 0.8rem;
       font-size: 1rem;
     }
-    ul {
-      list-style: none;
-      padding: 0;
+
+    .bus-dest {
+      flex: 1;
+      color: #444;
     }
-    li {
-      padding: 0.3rem 0;
-      border-bottom: 1px solid #333;
+
+    .bus-time {
+      font-weight: 700;
+      font-size: 1.2rem;
+      min-width: 70px;
+      text-align: right;
     }
-    a {
-      color: #00f;
+
+    .bus-time.arriving { color: #2e7d32; }
+    .bus-time.soon { color: #e65100; }
+    .bus-time.later { color: #3468a8; }
+
+    /* Stop selector */
+    .stop-selector {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.6rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      background: #f8f9fa;
+    }
+
+    .stop-btn {
+      background: #fff;
+      color: #888;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .stop-btn.active {
+      background: #3468a8;
+      color: #fff;
+      border-color: #2a5a8e;
+    }
+
+    .no-buses {
+      text-align: center;
+      color: #999;
+      padding: 1.5rem;
+      font-size: 1.1rem;
+    }
+
+    .error-msg {
+      text-align: center;
+      color: #c62828;
+      padding: 1rem;
+    }
+
+    .error-msg a {
+      color: #3468a8;
+      text-decoration: underline;
+    }
+
+    /* Portrait mode on iPad */
+    @media (orientation: portrait) {
+      .container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr;
+      }
+      .module.bus-module { grid-column: 1; }
+      .clock-time { font-size: 2.5rem; }
+      .weather-temp { font-size: 2.2rem; }
+    }
+
+    /* Small screens */
+    @media (max-height: 600px) {
+      header { padding: 0.4rem; font-size: 1.1rem; }
+      .container { gap: 0.5rem; padding: 0.5rem; }
+      .module h2 { padding: 0.3rem; font-size: 0.8rem; }
+      .clock-time { font-size: 2rem; }
+      .weather-temp { font-size: 2rem; }
     }
   </style>
 </head>
 <body>
-  <header>🚌 Georgetown Transit Dashboard</header>
+  <header>
+    <div style="min-width:120px"></div>
+    <div class="title">Georgetown Transit</div>
+    <div class="status" id="status">Starting...</div>
+  </header>
+
   <div class="container">
-    <div class="module" id="weather">
-      <h2>Current Weather</h2>
-      <div id="weatherContent">Loading weather...</div>
+    <div class="module">
+      <h2>Clock</h2>
+      <div class="module-body">
+        <div class="clock-time" id="clockTime">--:--</div>
+        <div class="clock-date" id="clockDate">---</div>
+      </div>
     </div>
 
-    <div class="module" id="clock">
-      <h2>Current Time</h2>
-      <div id="clockContent" style="font-size: 2rem; text-align: center;">--:--:--</div>
+    <div class="module">
+      <h2>Weather</h2>
+      <div class="module-body">
+        <div class="weather-main" id="weatherContent">Loading...</div>
+      </div>
     </div>
 
-    <div class="module" id="bus">
-      <h2>Bus Arrivals at Wisconsin & 34th</h2>
-      <ul id="arrival-list"><li>Loading bus data...</li></ul>
-    </div>
-
-    <div class="module" id="uber">
-      <h2>Uber Options</h2>
-      <p style="text-align: center;">
-        <a href="https://www.google.com/maps/dir/?api=1&origin=1735+34th+St+NW,+Washington,+DC&destination=Union+Station,+Washington,+DC&travelmode=driving" target="_blank">Check Uber via Google Maps</a>
-      </p>
+    <div class="module bus-module">
+      <h2>Next Buses — <span id="stopName">Loading...</span></h2>
+      <div class="stop-selector">
+        <button class="stop-btn active" data-stop="1001645">Wisconsin & 34th</button>
+        <button class="stop-btn" data-stop="1002875">16th & Belmont</button>
+      </div>
+      <div class="module-body">
+        <ul class="bus-list" id="busList">
+          <li class="no-buses">Loading bus schedule...</li>
+        </ul>
+      </div>
     </div>
   </div>
 
   <script>
-    // Clock
+    // ── Configuration ──
+    const WMATA_API_KEY = '75a4ad0acdc74a3ca9747020527de647';
+    const STOPS = {
+      '1001645': 'Wisconsin & 34th',
+      '1002875': '16th & Belmont'
+    };
+    let currentStopId = localStorage.getItem('selectedStop') || '1001645';
+    const LAT = 38.9136;
+    const LON = -77.0706;
+    const BUS_REFRESH_MS = 30000;
+    const WEATHER_REFRESH_MS = 600000;
+
+    // ── Clock ──
     function updateClock() {
       const now = new Date();
-      const timeString = now.toLocaleTimeString();
-      document.getElementById("clockContent").textContent = timeString;
+      document.getElementById('clockTime').textContent =
+        now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('clockDate').textContent =
+        now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Weather
-    async function loadWeather() {
-      const response = await fetch("https://api.openweathermap.org/data/2.5/weather?lat=38.9136&lon=-77.0706&units=imperial&appid=5202a7831f5def7d4c4848aa2d9a2874");
-      const data = await response.json();
-      const content = `
-        <div style="text-align: center">
-          <strong>${data.name}</strong><br />
-          ${data.weather[0].description}<br />
-          <strong>${Math.round(data.main.temp)}°F</strong><br />
-          Feels like: ${Math.round(data.main.feels_like)}°F
-        </div>
-      `;
-      document.getElementById("weatherContent").innerHTML = content;
+    // ── Status indicator ──
+    function setStatus(text, type) {
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.className = 'status ' + (type || '');
     }
-    loadWeather();
 
-    // WMATA Bus Arrivals
-    async function fetchBusArrivals() {
-      const stopId = '1001645';
-      const apiKey = '75a4ad0acdc74a3ca9747020527de647';
+    // ── Weather (Open-Meteo — free, no key needed) ──
+    async function loadWeather() {
       try {
-        const response = await fetch(`https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=${stopId}`, {
-          headers: {
-            'api_key': apiKey
-          }
-        });
-        const data = await response.json();
-        const arrivals = data.Predictions;
-        const arrivalList = document.getElementById('arrival-list');
-        arrivalList.innerHTML = '';
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,uv_index&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const c = data.current;
 
-        if (arrivals.length === 0) {
-          arrivalList.innerHTML = '<li>No upcoming buses.</li>';
-        } else {
-          arrivals.forEach(arrival => {
-            const listItem = document.createElement('li');
-            listItem.textContent = `Route ${arrival.RouteID} to ${arrival.DirectionText} - in ${arrival.Minutes} min`;
-            arrivalList.appendChild(listItem);
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching bus arrivals:', error);
-        document.getElementById('arrival-list').innerHTML = '<li>Error loading data.</li>';
+        const desc = weatherCodeToText(c.weather_code);
+        const icon = weatherCodeToIcon(c.weather_code);
+        const uv = c.uv_index;
+        const uvLabel = uvIndexLabel(uv);
+        const uvClass = uvIndexClass(uv);
+
+        document.getElementById('weatherContent').innerHTML = `
+          <div class="weather-temp">${icon} ${Math.round(c.temperature_2m)}\u00B0F</div>
+          <div class="weather-desc">${desc}</div>
+          <div class="weather-details">
+            Feels like ${Math.round(c.apparent_temperature)}\u00B0F &middot;
+            Wind ${Math.round(c.wind_speed_10m)} mph &middot;
+            Humidity ${c.relative_humidity_2m}%
+          </div>
+          <div class="weather-uv ${uvClass}">UV ${uv.toFixed(1)} &mdash; ${uvLabel}</div>
+        `;
+      } catch (err) {
+        console.error('Weather error:', err);
+        document.getElementById('weatherContent').innerHTML =
+          '<div class="error-msg">Weather unavailable</div>';
       }
     }
+
+    function uvIndexLabel(uv) {
+      if (uv < 3) return 'Low';
+      if (uv < 6) return 'Moderate';
+      if (uv < 8) return 'High';
+      if (uv < 11) return 'Very High';
+      return 'Extreme';
+    }
+
+    function uvIndexClass(uv) {
+      if (uv < 3) return 'uv-low';
+      if (uv < 6) return 'uv-moderate';
+      if (uv < 8) return 'uv-high';
+      if (uv < 11) return 'uv-very-high';
+      return 'uv-extreme';
+    }
+
+    function weatherCodeToText(code) {
+      const map = {
+        0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+        45: 'Foggy', 48: 'Freezing fog',
+        51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
+        61: 'Light rain', 63: 'Rain', 65: 'Heavy rain',
+        66: 'Freezing rain', 67: 'Heavy freezing rain',
+        71: 'Light snow', 73: 'Snow', 75: 'Heavy snow', 77: 'Snow grains',
+        80: 'Light showers', 81: 'Showers', 82: 'Heavy showers',
+        85: 'Light snow showers', 86: 'Heavy snow showers',
+        95: 'Thunderstorm', 96: 'Thunderstorm w/ hail', 99: 'Thunderstorm w/ heavy hail'
+      };
+      return map[code] || 'Unknown';
+    }
+
+    function weatherCodeToIcon(code) {
+      if (code === 0) return '\u2600\uFE0F';
+      if (code <= 2) return '\u26C5';
+      if (code === 3) return '\u2601\uFE0F';
+      if (code <= 48) return '\uD83C\uDF2B\uFE0F';
+      if (code <= 55) return '\uD83C\uDF26\uFE0F';
+      if (code <= 67) return '\uD83C\uDF27\uFE0F';
+      if (code <= 77) return '\u2744\uFE0F';
+      if (code <= 82) return '\uD83C\uDF27\uFE0F';
+      if (code <= 86) return '\uD83C\uDF28\uFE0F';
+      return '\u26C8\uFE0F';
+    }
+
+    // ── Bus Arrivals (WMATA API) ──
+    async function fetchBusArrivals() {
+      const listEl = document.getElementById('busList');
+      try {
+        const res = await fetch(
+          `https://api.wmata.com/NextBusService.svc/json/jPredictions?StopID=${currentStopId}`,
+          { headers: { 'api_key': WMATA_API_KEY } }
+        );
+
+        if (res.status === 401 || res.status === 403) {
+          listEl.innerHTML = `
+            <li class="error-msg">
+              WMATA API key expired or invalid.<br>
+              Get a free key at <a href="https://developer.wmata.com" target="_blank">developer.wmata.com</a>
+              and update the WMATA_API_KEY in config.js.
+            </li>`;
+          setStatus('API key error', 'error');
+          return;
+        }
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const arrivals = data.Predictions || [];
+
+        if (arrivals.length === 0) {
+          listEl.innerHTML = '<li class="no-buses">No buses scheduled right now</li>';
+        } else {
+          listEl.innerHTML = arrivals.map(a => {
+            const mins = a.Minutes;
+            let timeClass = 'later';
+            let timeText = `${mins} min`;
+            if (mins === 0) { timeClass = 'arriving'; timeText = 'NOW'; }
+            else if (mins <= 5) { timeClass = 'soon'; }
+
+            return `
+              <li class="bus-item">
+                <span class="bus-route">${a.RouteID}</span>
+                <span class="bus-dest">${a.DirectionText}</span>
+                <span class="bus-time ${timeClass}">${timeText}</span>
+              </li>`;
+          }).join('');
+        }
+
+        const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        setStatus(`Updated ${now}`, 'ok');
+
+      } catch (err) {
+        console.error('Bus error:', err);
+        listEl.innerHTML = '<li class="error-msg">Error loading bus data. Retrying...</li>';
+        setStatus('Bus error', 'error');
+      }
+    }
+
+    // ── Stop selector ──
+    function updateStopUI() {
+      document.getElementById('stopName').textContent = STOPS[currentStopId];
+      document.querySelectorAll('.stop-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.stop === currentStopId);
+      });
+    }
+
+    document.querySelectorAll('.stop-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentStopId = btn.dataset.stop;
+        localStorage.setItem('selectedStop', currentStopId);
+        updateStopUI();
+        document.getElementById('busList').innerHTML = '<li class="no-buses">Loading...</li>';
+        fetchBusArrivals();
+      });
+    });
+
+    updateStopUI();
+
+    // ── Init & refresh loops ──
+    loadWeather();
     fetchBusArrivals();
-    setInterval(fetchBusArrivals, 60000);
+    setInterval(fetchBusArrivals, BUS_REFRESH_MS);
+    setInterval(loadWeather, WEATHER_REFRESH_MS);
+
+    setTimeout(() => location.reload(), 6 * 60 * 60 * 1000);
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          await navigator.wakeLock.request('screen');
+        }
+      } catch (e) { /* not supported or denied */ }
+    }
+    requestWakeLock();
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+        fetchBusArrivals();
+        loadWeather();
+      }
+    });
   </script>
 </body>
 </html>
