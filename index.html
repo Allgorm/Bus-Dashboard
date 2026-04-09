@@ -100,6 +100,11 @@
       overflow: hidden;
     }
 
+    .bottom-row .map-module {
+      flex: 1;
+      min-height: 250px;
+    }
+
     /* Clock */
     .clock-time {
       font-size: 2.8rem;
@@ -490,6 +495,13 @@
           });
         });
 
+        // Fit map to show stop + nearest buses
+        const allPoints = [[stopPos.lat, stopPos.lon]];
+        busMarkersLayer.eachLayer(m => allPoints.push([m.getLatLng().lat, m.getLatLng().lng]));
+        if (allPoints.length > 1) {
+          const bounds = L.latLngBounds(allPoints);
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+        }
 
       } catch (err) {
         console.error('Bus positions error:', err);
